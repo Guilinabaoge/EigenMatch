@@ -106,11 +106,11 @@ void printSM(SparseMatrix<double> &M)
                 // cout << "";
                 // cout << " (" << it.row() << ",";
                 // cout << it.col() << ")  ";
-                // cout << "e " << it.col() << " " << it.row() << " "
+                //cout << "e " << it.col() << " " << it.row() << " "
                 //     << "0" << endl;
-                cout << "v" << it.row() << " " << it.col();
+                 cout<<"v"<< it.row()<<" "<<it.col();
                 // cout<<"v "<< it.col()<<" "<<"0";
-                cout << " " << it.value() << endl;
+                 cout <<" "<<it.value()<<endl;
             }
             // row index
             // col index (here it is equal to k)
@@ -217,7 +217,7 @@ void ExtractAdL(SparseMatrix<double> &M, Graph *data_graph, int degree, int dept
 
 void calcEigens1(SparseMatrix<double> M, int k, VectorXd &evalues, int count)
 {
-    int sizek = k * 2;
+    int sizek = k*2;
     int dek = k;
 
     if (count == 0 || count == 1)
@@ -230,9 +230,10 @@ void calcEigens1(SparseMatrix<double> M, int k, VectorXd &evalues, int count)
 
         return;
     }
-
+    
     if (k >= count)
         k = count - 1;
+
 
     SparseGenMatProd<double> op(M);
     SymEigsSolver<SparseGenMatProd<double>> eigs(op, k, count);
@@ -244,10 +245,15 @@ void calcEigens1(SparseMatrix<double> M, int k, VectorXd &evalues, int count)
     if (eigs.info() != CompInfo::Successful)
     {
         int info = static_cast<int>(eigs.info());
-
+        cout << "problem No Eigs" << endl;
+        cout << info;
+        checkM(M);
+        //cout<<count<<endl;
+        //cout<<k<<endl;
+        //printSM(M);
         evalues.resize(k);
-        for (int ss = 0; ss < k; ss++)
-            evalues(ss) = k;
+        for (int ss=0;ss<k;ss++)
+        evalues(ss)=count;
     }
 
     if (evalues.size() < dek)
@@ -266,13 +272,18 @@ void CompactADLEIGSet(Graph *data_graph, int degree, VectorXd &evalues, VertexID
     vector<T> tripletList;
     vector<VertexID> ID; // add size then resize
     vector<VertexID> IDD;
+    // vector<VertexID> IDL;
 
     VertexID *neighbors_;
     unordered_map<ui, ui> SID;
+    // VertexID * ID; //add size then resize
     VertexID *IDL;
 
+    // ID = new VertexID[data_graph->getVerticesCount()];
     IDL = new VertexID[data_graph->getVerticesCount()];
-   ;
+    // memset(ID, 0, sizeof(ui) * (degree*depth));
+    // memset(ID, 0, sizeof(VertexID) * (data_graph->getVerticesCount()));
+    // memset(IDL, 0, sizeof(VertexID) * (data_graph->getVerticesCount()));
     VertexID vx1;
     VertexID vx2 = 0;
     VertexID vertexpair;
@@ -292,15 +303,20 @@ void CompactADLEIGSet(Graph *data_graph, int degree, VectorXd &evalues, VertexID
     {
 
         evalues.resize(k);
+        // evalues<<500,500,500;
         for (int i = 0; i < k; i++)
             evalues(i) = 500;
         return;
     }
     SID.insert({vertex, 0});
+    // ID.push_back(vertex);
     IDL[0] = 1;
+    // ID[0]=vertex;
     queue<VertexID> q_curr;
     queue<VertexID> q_next;
     queue<VertexID> q_temp;
+    // cout<<u_nbrs_count<<" NC "<<endl;
+    // cout<<vertex<<" vertex "<<endl;
     tripletList.push_back(T(0, 0, (float)u_nbrs_count));
     for (int j = 0; j < u_nbrs_count; ++j)
     {
@@ -310,11 +326,14 @@ void CompactADLEIGSet(Graph *data_graph, int degree, VectorXd &evalues, VertexID
         tripletList.push_back(T(0, count, -1));
         tripletList.push_back(T(count, 0, -1));
         SID.insert({u_nbrs[j], count});
-
+        // ID.push_back(u_nbrs[j]);
+        // IDL.push_back(1);
 
         IDL[count] = 1;
         count++;
+        // ID[count]=u_nbrs[j];
         q_curr.push(u_nbrs[j]);
+        // cout<<u_nbrs[j]<<" edge pair "<<endl;
     }
 
     for (int i = 1; i < depth; i++)
@@ -330,15 +349,18 @@ void CompactADLEIGSet(Graph *data_graph, int degree, VectorXd &evalues, VertexID
                 evalues.resize(k);
                 for (int tt = 0; tt < k; tt++)
                     evalues(tt) = 500;
-                
+                // evalues<<500,500,500,500;
+                // evalues<<500,500,500,500,500,500,500,500,500,500;
                 return;
             }
 
             auto it = SID.find(vertex);
             vx1 = it->second;
+            // vx1=checkANX(ID,vertex);
 
             tripletList.push_back(T(vx1, vx1, (float)u_nbrs_count));
 
+            // cout<<u_nbrs_count<<" NC "<<endl;
 
             for (ui j = 0; j < u_nbrs_count; ++j)
             {
@@ -346,6 +368,9 @@ void CompactADLEIGSet(Graph *data_graph, int degree, VectorXd &evalues, VertexID
                 vertexpair = u_nbrs[j];
                 if (vertexpair == vertex)
                     cout << "problem again!!" << endl;
+                // cout<<vertex<<" vertex " <<vertexpair<<" edge pair "<<endl;
+                // vx2=checkANX(ID,vertexpair);
+                // cout<<vx1<<" vx1 " <<vx2<<" vx2 "<<endl;
                 auto [it1, success] = SID.try_emplace(vertexpair, count);
 
                 if (success)
@@ -376,20 +401,35 @@ void CompactADLEIGSet(Graph *data_graph, int degree, VectorXd &evalues, VertexID
     {
         vertex = q_curr.front();
         q_curr.pop();
+        // vx1=checkA(ID,vertex,count);
         vx1 = SID[vertex];
+        // vx1=checkANX(ID,vertex);
         tripletList.push_back(T(vx1, vx1, IDL[vx1]));
     }
-
+    // cout<<"hisurrender"<<endl;
+    // count++;
+    // if (ID.size()!=count)
+    //     cout<<"hi"<<endl;
     SparseMatrix<double> M(count, count);
     M.setFromTriplets(tripletList.begin(), tripletList.end(), [](double a, double b)
                       { return b; });
 
+    /*if(checkM(M)){
+                   cout<<"wrong Laplacian Matrix-Malakas"<<endl;
+               }
 
-    calcEigens1(M, k, evalues, count);
+   */
+
+    calcEigens1(M, Eprun, evalues, count);
     tripletList.clear();
     ID.clear();
     SID.clear();
-
+    // delete[] IDL;
+    // IDL.clear();
+    // delete[]  neighbors_;
+    // delete[]
+    // delete[]
+    // delete[] u_nbrs;
 }
 void CompactADLEIG(Graph *data_graph, int degree, VectorXd &evalues, VertexID vertex, int depth, int Eprun)
 {
@@ -409,7 +449,7 @@ void CompactADLEIG(Graph *data_graph, int degree, VectorXd &evalues, VertexID ve
     ui u_nbrs_count1;
     const VertexID *u_nbrs = data_graph->getVertexNeighbors(vertex, u_nbrs_count);
     int k = data_graph->getVerticesCount() - 1;
-    if (k > 16)
+    if (k >= 10)
         k = Eprun;
     if (k <= 15)
         k = 10;
@@ -425,10 +465,12 @@ void CompactADLEIG(Graph *data_graph, int degree, VectorXd &evalues, VertexID ve
     }
     ID.push_back(vertex);
     IDL.push_back(1);
+    // ID[0]=vertex;
     queue<VertexID> q_curr;
     queue<VertexID> q_next;
     queue<VertexID> q_temp;
-
+    // cout<<u_nbrs_count<<" NC "<<endl;
+    // cout<<vertex<<" vertex "<<endl;
     tripletList.push_back(T(0, 0, (float)u_nbrs_count));
     for (int j = 0; j < u_nbrs_count; ++j)
     {
@@ -507,7 +549,7 @@ void CompactADLEIG(Graph *data_graph, int degree, VectorXd &evalues, VertexID ve
         vx1 = checkANX(ID, vertex);
         tripletList.push_back(T(vx1, vx1, IDL[vx1]));
     }
-    count++; /*
+    count++; 
                      map<int, int> count_uniques;
                      set<pair<int, int>> seen;
                      vector<Triplet<double>> unique_triplets;
@@ -520,13 +562,26 @@ void CompactADLEIG(Graph *data_graph, int degree, VectorXd &evalues, VertexID ve
                              count_uniques[t.row()]++;
                          }
                      }
-                     tripletList=unique_triplets;*/
+    tripletList=unique_triplets;
+    if(tripletList.size()==count*count){
+    evalues.resize(k);
+
+    for (int ss=0;ss<k;ss++){
+        if (ss<count)
+        evalues(ss)=count-1;
+        else if (ss==count)
+        evalues(ss)=0;
+        else evalues(ss)=-1;
+    }
+        
+        }
+        else{
     SparseMatrix<double> M(count, count);
     M.setFromTriplets(tripletList.begin(), tripletList.end(), [](double a, double b)
                       { return b; });
     // checkM(M);
-
-    calcEigens1(M, k, evalues, count);
+    
+    calcEigens1(M, k, evalues, count);}
     tripletList.clear();
     ID.clear();
     IDL.clear();
@@ -540,31 +595,48 @@ void CompactADLEIGImpro(Graph *data_graph, int degree, VectorXd &evalues, Vertex
     vector<VertexID> IDL;
     VertexID *neighbors_;
     unordered_map<ui, ui> SID;
+    // VertexID * ID; //add size then resize
+    // VertexID * IDL;
 
+    // ID = new VertexID[data_graph->getVerticesCount()];
+    // cout<<" Hi "<<endl;
+    // IDL = new VertexID[data_graph->getVerticesCount()];
+    // IDL = new VertexID[5000];
+    // memset(ID, 0, sizeof(ui) * (degree*depth));
+    // memset(ID, 0, sizeof(VertexID) * (data_graph->getVerticesCount()));
+    // memset(IDL, 0, sizeof(VertexID) * (data_graph->getVerticesCount()));
+
+    // memset(IDL, 0, sizeof(VertexID) * (1000));
+    // cout<<" Hi by "<<endl;
     VertexID vx1;
     VertexID vx2;
     VertexID vertexpair;
     VertexID vertexprint;
     vertexprint = vertex;
     int count = 1;
+    // cout<<vertex<<"vertex ID"<<endl;
 
     ui u_nbrs_count;
     ui u_nbrs_count1;
     const VertexID *u_nbrs = data_graph->getVertexNeighbors(vertex, u_nbrs_count);
     int k = 16;
+    // cout<<u_nbrs_count<<" NC "<<endl;
     if (u_nbrs_count > 150)
     {
         evalues.resize(k);
+        // evalues<<500,500,500;
         for (int i = 0; i < k; i++)
             evalues(i) = 500;
         return;
     }
     SID.insert({vertex, count});
     IDL.push_back(1);
+    // ID[0]=vertex;
     queue<VertexID> q_curr;
     queue<VertexID> q_next;
     queue<VertexID> q_temp;
 
+    // cout<<vertex<<" vertex "<<endl;
     tripletList.push_back(T(0, 0, u_nbrs_count));
     for (int j = 0; j < u_nbrs_count; ++j)
     {
@@ -576,13 +648,15 @@ void CompactADLEIGImpro(Graph *data_graph, int degree, VectorXd &evalues, Vertex
         SID.insert({u_nbrs[j], count});
         IDL.push_back(1);
         count++;
+        // ID[count]=u_nbrs[j];
         q_curr.push(u_nbrs[j]);
+        // cout<<u_nbrs[j]<<" edge pair "<<endl;
     }
 
     for (int i = 1; i < depth; i++)
     {
         while (!q_curr.empty())
-        {
+        { // or just counter and clear
             vertex = q_curr.front();
             q_curr.pop();
             u_nbrs = data_graph->getVertexNeighbors(vertex, u_nbrs_count);
@@ -592,23 +666,36 @@ void CompactADLEIGImpro(Graph *data_graph, int degree, VectorXd &evalues, Vertex
                 evalues.resize(k);
                 for (int tt = 0; tt < k; tt++)
                     evalues(tt) = 500;
+                // evalues<<500,500,500,500;
+                // evalues<<500,500,500,500,500,500,500,500,500,500;
                 return;
             }
+            // vx1=checkA(ID,vertex,count);
 
+            // vx1=checkANX(ID,vertex);
             vx1 = SID[vertex];
             tripletList.push_back(T(vx1, vx1, u_nbrs_count));
+
+            /// cout<<vertex<<" vertex "<<endl;
+            // cout<<u_nbrs_count<<" NC "<<endl;
 
             for (ui j = 0; j < u_nbrs_count; ++j)
             {
                 vertexpair = u_nbrs[j];
-
+                // cout<<vertex<<" vertex " <<vertexpair<<" edge pair "<<endl;
+                // vx2=checkA(ID,vertexpair,count);
+                // vx2=checkANX(ID,vertexpair);
                 auto result = SID.insert({vertexpair, count});
+                // cout<<vx1<<" vx1 " <<vx2<<" vx2 "<<endl;
                 if (result.second)
                 {
 
                     vx2 = count;
+                    // cout<<"Indide "<<vx1<<" vx1 " <<vx2<<" vx2 "<<endl;
                     q_next.push(vertexpair);
+                    // ID.push_back(vertexpair);
                     IDL.push_back(1);
+                    // ID[count]=vertexpair;
                     tripletList.push_back(T(vx1, vx2, -1));
                     tripletList.push_back(T(vx2, vx1, -1));
                     count++;
@@ -622,6 +709,7 @@ void CompactADLEIGImpro(Graph *data_graph, int degree, VectorXd &evalues, Vertex
                     vx2 = result.first->second;
                     if (vx2 == vx1)
                     {
+                        // cout<<"hola"<<endl;
                         continue;
                     }
                     tripletList.push_back(T(vx1, vx2, -1));
@@ -632,8 +720,17 @@ void CompactADLEIGImpro(Graph *data_graph, int degree, VectorXd &evalues, Vertex
                     }
                 }
             }
+            // count=checkA(ID,vertex,count);
+            // ui data_graph->offsets_[id + 1] - data_graph->offsets_[id];
+            // for (ui j = 0; j < u_nbrs_count; ++j) {
+            //   const VertexID* u_nbrs1 = data_graph->getVertexNeighbors(u_nbrs[j], u_nbrs_count1);
+            // checkA(ID,vertex);
+            //}
         }
-
+        // q_temp=q_curr;
+        // q_curr=q_next;
+        // q_next=q_temp;
+        // cout<<" I surrender "<<endl;
         if (!q_next.empty())
             q_curr.swap(q_next);
         else
@@ -641,25 +738,39 @@ void CompactADLEIGImpro(Graph *data_graph, int degree, VectorXd &evalues, Vertex
             i = depth;
         }
     }
+    // cout<<" can we surrender "<<endl;
     while (!q_curr.empty())
     {
         vertex = q_curr.front();
         q_curr.pop();
+        // vx1=checkA(ID,vertex,count);
         vx1 = SID[vertex];
+        // vx1=checkANX(ID,vertex);
         tripletList.push_back(T(vx1, vx1, IDL[vx1]));
     }
+    // count++;
 
     SparseMatrix<double> M(count, count);
     M.setFromTriplets(tripletList.begin(), tripletList.end(), [](double a, double b)
                       { return b; });
 
+    /*if(checkM(M)){
+                   cout<<"wrong Laplacian Matrix-Malakas"<<endl;
+               }
+
+   */
+
     calcEigens1(M, k, evalues, count);
     tripletList.clear();
     ID.clear();
     IDL.clear();
+    // delete[]  neighbors_;
+    // delete[]  IDL;
+    // delete[]
+    // delete[] u_nbrs;
 }
 
-void MTEigCal(Graph *data_graph, int degree, MatrixXd &eigenVD, bool LE, int Eprun)
+void MTcalc12(Graph *data_graph, int degree, MatrixXd &eigenVD, bool LE, int Eprun)
 {
 
     auto AdJAdl1 = [](Graph *data_graph, int degree, VertexID svertex, VertexID evertex, MatrixXd &eigenVD, bool LE, int Eprun)
@@ -680,7 +791,7 @@ void MTEigCal(Graph *data_graph, int degree, MatrixXd &eigenVD, bool LE, int Epr
         }
     };
 
-    int Tnum = 3;
+    int Tnum = 1;
     int siz = data_graph->getVerticesCount();
 
     int div = (int)(siz / Tnum);

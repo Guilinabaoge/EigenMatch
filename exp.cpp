@@ -522,11 +522,11 @@ void VerticesCSN(vector<vector<CSV>> &FCS, int qsiz, int dsiz, Graph *data_graph
     int k = 0;
     ui data_vertex_num;
     int prunES = qsiz - 1;
-    if (prunES > 16)
-        prunES = 20;
-    if (prunES < 10)
+    if (prunES >= 10)
         prunES = 10;
-    prunES = 10;
+    if (prunES <= 10)
+        prunES = 5;
+    //prunES = 10;
     for (int i = 0; i < qsiz; i++)
     {
         label = query_graph->getVertexLabel(i);
@@ -544,7 +544,7 @@ void VerticesCSN(vector<vector<CSV>> &FCS, int qsiz, int dsiz, Graph *data_graph
                 for (int kk = 0; kk < prunES; kk++)
                 {
                     if (eigenVD1[data_vertex][kk] < eigenVq1[i][kk])
-                        if (eigenVq1[i][kk] - eigenVD1[data_vertex][kk] > 0.1)
+                        if (eigenVq1[i][kk] - eigenVD1[data_vertex][kk] > 0.00001)
                         {
                             con = false;
                             break;
@@ -706,7 +706,7 @@ void SpectralMatchingIter(int sizd, MatrixXd eigenVD1, Graph *data_graph, string
         query_graph->loadGraphFromFile(input_query_graph_file + to_string(kk) + input_end);
         int sizq = query_graph->getVerticesCount();
         MatrixXd eigenVq1(sizq, 10);
-        MTEigCal(query_graph, query_graph->getGraphMaxDegree(), eigenVq1, true, 30);
+        MTcalc12(query_graph, query_graph->getGraphMaxDegree(), eigenVq1, true, 30);
         // CSInit(data_graph,query_graph,eigenVD1,eigenVq1);
     }
 }
@@ -720,13 +720,13 @@ int SpectralMatching(int sizd, float **&eigenVD1, Graph *data_graph, string inpu
     // int sizq=query_graph->getVerticesCount();
     int Eprun = sizq - 1;
     if (Eprun > 16)
-        Eprun = 20;
-    else if (Eprun < 10)
         Eprun = 10;
-    Eprun = 10;
+    else if (Eprun < 8)
+        Eprun = 5;
+   
     MatrixXd eigenVq1(sizq, Eprun);
 
-    MTEigCal(query_graph, query_graph->getGraphMaxDegree(), eigenVq1, true, Eprun);
+    MTcalc12(query_graph, query_graph->getGraphMaxDegree(), eigenVq1, true, Eprun);
     float **eigenQ = NULL;
     eigenQ = new float *[sizq];
 
@@ -736,9 +736,9 @@ int SpectralMatching(int sizd, float **&eigenVD1, Graph *data_graph, string inpu
         for (ui j = 0; j < Eprun; j++)
         {
             eigenQ[i][j] = eigenVq1(i, j);
-            // cout << eigenQ[i][j] << ",";
+           //  cout << eigenQ[i][j] << ",";
         }
-        // cout << i << endl;
+         //cout << i << endl;
     }
     // auto stop2 = high_resolution_clock::now();
     // auto duration2 = duration_cast<milliseconds>(stop2 - start2);
@@ -836,12 +836,12 @@ int CSInit(Graph *data_graph, Graph *query_graph, float **&eigenVD1, float **&ei
     int maxDK = 0;
     int stop = 0;
     while (ReverseRefinementNOTES(QueryNlabel,
-                                  FCS, qsiz, query_graph))
+                                  FCS, qsiz, query_graph));
         stop++;
     // CSSizeReal(FCS, qsiz);
-    // while (ReverseRefinementOCS1(QueryNlabel, QueryNlabel2, Qnew, FCS, qsiz, query_graph, eigenVq1))
-    //    ;
-    ReverseRefinementOCS1(QueryNlabel, QueryNlabel2, Qnew, FCS, qsiz, query_graph, eigenVq1);
+    while (ReverseRefinementOCS1(QueryNlabel, QueryNlabel2, Qnew, FCS, qsiz, query_graph, eigenVq1))
+        ;
+  //  ReverseRefinementOCS1(QueryNlabel, QueryNlabel2, Qnew, FCS, qsiz, query_graph, eigenVq1);
     return CSSizeReal(FCS, qsiz);
 }
 
@@ -939,8 +939,12 @@ bool ReverseRefinementOCS1(vector<vector<pair<ui, int>>> &QueryNlabel,
     vector<VertexID> temp2;
     vector<pair<VertexID, VertexID>> q_curr;
     vector<pair<ui, int>> EvalNeigb;
-
-    VectorXd evalues;
+    int Eprun=5;
+    if(qsiz>=10)
+        Eprun=10;
+    else
+        Eprun=5;
+    //VectorXd evalues;
     VectorXd qevalues;
     VertexID tempxx = 0;
     int metrwiters = 0;
@@ -950,6 +954,7 @@ bool ReverseRefinementOCS1(vector<vector<pair<ui, int>>> &QueryNlabel,
     bool testcor;
     bool continueEL = false;
     ui oMax = qsiz * 1.5;
+    VectorXd evalues(Eprun);
     for (int i = 0; i < qsiz; i++)
     {
 
@@ -974,7 +979,7 @@ bool ReverseRefinementOCS1(vector<vector<pair<ui, int>>> &QueryNlabel,
             SIDD.insert(i);
 
             bool continueE = OneHopEigenSFPNS(cvertex, SID, SIDD, IDDLC, tripletList, EvalNeigb,
-                                              query_graph, vertexDegree - 1, q_curr);
+                                              query_graph, vertexDegree, q_curr);
 
             if (continueE)
             {
@@ -998,18 +1003,30 @@ bool ReverseRefinementOCS1(vector<vector<pair<ui, int>>> &QueryNlabel,
                         unique_triplets.push_back(Triplet<double>(it.first, it.first, it.second));
                     }
                     tripletList = unique_triplets;
-
+                        if(tripletList.size()==IDDLC[0]*IDDLC[0]){
+    evalues.resize(Eprun);
+            
+    for (int ss=0;ss<Eprun;ss++){
+        if (ss<IDDLC[0])
+        evalues(ss)=IDDLC[0]-1;
+        else if (ss==IDDLC[0])
+        evalues(ss)=0;
+        else 
+        evalues(ss)=-1;
+    }
+        
+        }else{
                     SparseMatrix<double> M(IDDLC[0], IDDLC[0]);
                     M.setFromTriplets(tripletList.begin(), tripletList.end(), [](double a, double b)
                                       { return b; });
                     // checkM(M);
 
-                    VectorXd evalues(10);
+                    
 
-                    calcEigens1(M, 10, evalues, IDDLC[0]);
-
+                    calcEigens1(M, Eprun, evalues, IDDLC[0]);
+}
                     bool con = true;
-                    for (int dd = 0; dd < 10; dd++)
+                    for (int dd = 0; dd < Eprun; dd++)
                     {
                         if (eigenVq1[i][dd] <= 0)
                             break;
@@ -1114,7 +1131,7 @@ int main(int argc, char **argv)
     Graph *query_graph = new Graph(true);
     Graph *data_graph = new Graph(true);
     Graph *data_graph1 = new Graph(true);
-    string input_data_graph_file = "dataset\\dblp\\data_graph\\dblp.graph";
+    string input_data_graph_file = "dataset\\yeast\\data_graph\\yeast.graph";
     // input_data_graph_file="graphB.txt";
     string input_query_graph_file = "dataset\\wordnet\\query_graph\\query_dense_8_2.graph";
 
@@ -1138,12 +1155,12 @@ int main(int argc, char **argv)
     VectorXd e1values;
 
     auto start1 = high_resolution_clock::now();
-    //MTEigCal(data_graph, degree, eigenVD1, true, eigenV); // need small improvements.memory wise like it is implemented later on
+     //MTcalc12(data_graph, degree, eigenVD1, true, eigenV); // need small improvements.memory wise like it is implemented later on
 
     auto stop1 = high_resolution_clock::now();
     auto duration1 = duration_cast<milliseconds>(stop1 - start1);
 
-    // MTEigCal(query_graph, degree,eigenVq1,true);
+     //MTcalc12(query_graph, degree,eigenVq1,true);
     // calcres(sizd,eigenVD1,data_graph);
     //saveData("dblp.csv", eigenVD1);
 
@@ -1154,8 +1171,8 @@ int main(int argc, char **argv)
     {
         eigenData[i] = new float[30];
     }
-    eigenVDC = (openData("dblp.csv"));
-    openData1("dblp.csv", eigenData);
+    eigenVDC = (openData("yeast.csv"));
+    openData1("yeast.csv", eigenData);
     for (int i = 0; i < sizd; i++)
         for (int j = 0; j < 30; j++)
             if (eigenVDC(i, j) != eigenData[i][j])
@@ -1167,38 +1184,51 @@ int main(int argc, char **argv)
     int SpecCand = 0;
     float GQLTime = 0;
     float SpecTime = 0;
-
-    string input_query_graph_file1 = "dataset\\dblp\\query_graph\\query_dense_32_";
-
-    int cc = 0;
-    for (int i = 1; i <= 200; i++)
-    {
-        input_query_graph_file = input_query_graph_file1 + to_string(i) + ".graph";
-        // input_query_graph_file="graphB.txt";
-        cout << input_query_graph_file << endl;
-        auto GQL1 = high_resolution_clock::now();
-        Graph *query_graph = new Graph(true);
-        query_graph->loadGraphFromFileG(input_query_graph_file);
-        GQLCand = GQLCand + GQL(data_graph1, query_graph);
-        auto GQL2 = high_resolution_clock::now();
-        auto GQLdur = duration_cast<milliseconds>(GQL2 - GQL1);
-        cout << "GQL" << GQLdur.count() << endl;
-        GQLTime = GQLTime + GQLdur.count();
-        auto start2 = high_resolution_clock::now();
-        cc = SpectralMatching(sizd, eigenData, data_graph, input_query_graph_file); // make the loop outside
-        SpecCand = SpecCand + cc;
-        auto stop2 = high_resolution_clock::now();
-        if (cc < query_graph->getVerticesCount())
-            cout << "PRoblem " << cc << endl;
-        auto duration2 = duration_cast<milliseconds>(stop2 - start2);
-        cout << "Sprectral Matching" << duration2.count() << endl;
-        SpecTime = SpecTime + duration2.count();
-        // delete []query_graph;
+    int cc=0;
+    string input_query_graph_file2;
+    string input_query_graph_file1 = "dataset\\yeast\\query_graph\\query_sparse_16_";
+    input_query_graph_file1 = "dataset\\yeast\\query_graph\\query_dense_";
+    string qr1[5] = {"4_", "8_", "16_", "24_", "32_"};
+    for (int as = 1; as < 5; as++)
+    {input_query_graph_file2=input_query_graph_file1+qr1[as];
+        GQLCand = 0;
+        SpecCand = 0;
+        GQLTime = 0;
+        SpecTime = 0;
+        cc=0;
+        for (int i = 1; i <= 200; i++)
+        {
+            input_query_graph_file = input_query_graph_file2 + to_string(i) + ".graph";
+            // input_query_graph_file="graphB.txt";
+            //cout << input_query_graph_file << endl;
+            auto GQL1 = high_resolution_clock::now();
+            Graph *query_graph = new Graph(true);
+            query_graph->loadGraphFromFileG(input_query_graph_file);
+            GQLCand = GQLCand + GQL(data_graph1, query_graph);
+            auto GQL2 = high_resolution_clock::now();
+            auto GQLdur = duration_cast<milliseconds>(GQL2 - GQL1);
+            // cout << "GQL" << GQLdur.count() << endl;
+            GQLTime = GQLTime + GQLdur.count();
+            auto start2 = high_resolution_clock::now();
+            cc = SpectralMatching(sizd, eigenData, data_graph, input_query_graph_file); // make the loop outside
+            SpecCand = SpecCand + cc;
+            auto stop2 = high_resolution_clock::now();
+            if (cc < query_graph->getVerticesCount()){
+                cout << "PRoblem " << cc << endl;
+                cout << input_query_graph_file << endl;
+            }
+                
+            auto duration2 = duration_cast<milliseconds>(stop2 - start2);
+            // cout << "Sprectral Matching" << duration2.count() << endl;
+            SpecTime = SpecTime + duration2.count();
+            // delete []query_graph;
+        }
+        cout << qr1[as] << endl;
+        cout << "Spectral Time: " << SpecTime / 200 << endl;
+        cout << "Spectral Cand: " << SpecCand / 200 << endl;
+        cout << "GQL Time: " << GQLTime / 200 << endl;
+        cout << "GQLCand : " << GQLCand / 200 << endl;
     }
-    cout << "Spectral Time: " << SpecTime / 200 << endl;
-    cout << "Spectral Cand: " << SpecCand / 200 << endl;
-    cout << "GQL Time: " << GQLTime / 200 << endl;
-    cout << "GQLCand : " << GQLCand / 200 << endl;
     string qr[5] = {"4_", "8_", "16_", "24_", "32_"};
     // inputgraph="dataset\\yeast\\query_graph\\query_dense_";
     auto start3 = high_resolution_clock::now();
