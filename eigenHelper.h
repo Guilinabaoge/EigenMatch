@@ -17,6 +17,6 @@ void MTcalc(Graph *data_graph,int degree, MatrixXcd &eigenVD);
 void MTcalc1(Graph *data_graph,int degree, MatrixXd &eigenVD);
 //void calcEigens1( SparseMatrix<double> M,int k,VectorXd &evalues);
 void calcEigens1(SparseMatrix<double> M, int k, VectorXd &evalues,int count);
- void MTcalc12(Graph *data_graph,int degree,MatrixXd &eigenVD,bool LE,int Eprun);
+ void MTEigCal(Graph *data_graph,int degree,MatrixXd &eigenVD,bool LE,int Eprun);
  void CompactADLEIG(Graph *data_graph,int degree,VectorXd &evalues,VertexID vertex,int depth,int Eprun);
  void CompactADJEIG(Graph *data_graph,int degree,VectorXd& evalues,VertexID vertex,int depth);
