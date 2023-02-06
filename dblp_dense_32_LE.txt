@@ -1,0 +1,81 @@
+dataset\dblp\query_graph\query_dense_32_ 
+0 : Number of Eigenvalues used is 
+12.0548
+11.9069
+45.7175
+10.4501
+47.1742
+92.8646
+95.913 
+1 : Number of Eigenvalues used is 
+34.9196
+34.6553
+45.7175
+30.5459
+49.8269
+92.8646
+95.913 
+2 : Number of Eigenvalues used is 
+45.255
+44.7435
+45.7175
+39.361
+51.1001
+92.8646
+95.913 
+3 : Number of Eigenvalues used is 
+49.5548
+48.8378
+45.7175
+42.6195
+51.9359
+92.8646
+95.913 
+4 : Number of Eigenvalues used is 
+51.6093
+50.7464
+45.7175
+43.8818
+52.5822
+92.8646
+95.913 
+5 : Number of Eigenvalues used is 
+52.7522
+51.7867
+45.7175
+44.4303
+53.0739
+92.8646
+95.913 
+6 : Number of Eigenvalues used is 
+53.4327
+52.3958
+45.7175
+44.683
+53.4303
+92.8646
+95.913 
+7 : Number of Eigenvalues used is 
+53.8527
+52.7676
+45.7175
+44.8057
+53.6794
+92.8646
+95.913 
+8 : Number of Eigenvalues used is 
+54.1192
+53.0018
+45.7175
+44.8676
+53.8518
+92.8646
+95.913 
+9 : Number of Eigenvalues used is 
+54.3019
+53.1618
+45.7175
+44.8997
+53.9796
+92.8646
+95.913
