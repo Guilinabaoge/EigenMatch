@@ -2621,7 +2621,7 @@ void calcres(int sizd,MatrixXd eigenVD1,Graph *data_graph){
     query_graph->loadGraphFromFile(input_query_graph_file);
     int sizq=query_graph->getVerticesCount();
     MatrixXd eigenVq1(sizq,10);
-    MTcalc12(query_graph, query_graph->getGraphMaxDegree(),eigenVq1,true,30);
+    MTEigCal(query_graph, query_graph->getGraphMaxDegree(),eigenVq1,true,30);
     double x;
     cout<<"before";
     

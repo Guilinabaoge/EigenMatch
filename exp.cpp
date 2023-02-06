@@ -706,7 +706,7 @@ void SpectralMatchingIter(int sizd, MatrixXd eigenVD1, Graph *data_graph, string
         query_graph->loadGraphFromFile(input_query_graph_file + to_string(kk) + input_end);
         int sizq = query_graph->getVerticesCount();
         MatrixXd eigenVq1(sizq, 10);
-        MTcalc12(query_graph, query_graph->getGraphMaxDegree(), eigenVq1, true, 30);
+        MTEigCal(query_graph, query_graph->getGraphMaxDegree(), eigenVq1, true, 30);
         // CSInit(data_graph,query_graph,eigenVD1,eigenVq1);
     }
 }
@@ -726,7 +726,7 @@ int SpectralMatching(int sizd, float **&eigenVD1, Graph *data_graph, string inpu
     Eprun = 10;
     MatrixXd eigenVq1(sizq, Eprun);
 
-    MTcalc12(query_graph, query_graph->getGraphMaxDegree(), eigenVq1, true, Eprun);
+    MTEigCal(query_graph, query_graph->getGraphMaxDegree(), eigenVq1, true, Eprun);
     float **eigenQ = NULL;
     eigenQ = new float *[sizq];
 
@@ -1138,12 +1138,12 @@ int main(int argc, char **argv)
     VectorXd e1values;
 
     auto start1 = high_resolution_clock::now();
-    //MTcalc12(data_graph, degree, eigenVD1, true, eigenV); // need small improvements.memory wise like it is implemented later on
+    //MTEigCal(data_graph, degree, eigenVD1, true, eigenV); // need small improvements.memory wise like it is implemented later on
 
     auto stop1 = high_resolution_clock::now();
     auto duration1 = duration_cast<milliseconds>(stop1 - start1);
 
-    // MTcalc12(query_graph, degree,eigenVq1,true);
+    // MTEigCal(query_graph, degree,eigenVq1,true);
     // calcres(sizd,eigenVD1,data_graph);
     //saveData("dblp.csv", eigenVD1);
 

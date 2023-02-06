@@ -659,7 +659,7 @@ void CompactADLEIGImpro(Graph *data_graph, int degree, VectorXd &evalues, Vertex
     IDL.clear();
 }
 
-void MTcalc12(Graph *data_graph, int degree, MatrixXd &eigenVD, bool LE, int Eprun)
+void MTEigCal(Graph *data_graph, int degree, MatrixXd &eigenVD, bool LE, int Eprun)
 {
 
     auto AdJAdl1 = [](Graph *data_graph, int degree, VertexID svertex, VertexID evertex, MatrixXd &eigenVD, bool LE, int Eprun)
